@@ -1,11 +1,9 @@
-package iu.devinmehringer.project4.model.resource;
+package iu.devinmehringer.project4.statemachine;
 
 
 import iu.devinmehringer.project4.controller.exception.IllegalStateTransitionException;
 import iu.devinmehringer.project4.model.plan.ActionStateEnum;
 import iu.devinmehringer.project4.model.plan.Suspension;
-import iu.devinmehringer.project4.statemachine.ActionContext;
-import iu.devinmehringer.project4.statemachine.ActionState;
 import org.springframework.stereotype.Component;
 import java.time.LocalDate;
 
@@ -14,7 +12,6 @@ public class InProgressState implements ActionState {
 
     @Override
     public void implement(ActionContext ctx) {
-        throw new IllegalStateTransitionException("IN_PROGRESS", "implement");
     }
 
     @Override
@@ -44,4 +41,24 @@ public class InProgressState implements ActionState {
 
     @Override
     public String name() { return "IN_PROGRESS"; }
+
+    @Override
+    public void submitForApproval(ActionContext ctx) {
+        throw new IllegalStateTransitionException(name(), "submitForApproval");
+    }
+
+    @Override
+    public void approve(ActionContext ctx) {
+        throw new IllegalStateTransitionException(name(), "approve");
+    }
+
+    @Override
+    public void reject(ActionContext ctx) {
+        throw new IllegalStateTransitionException(name(), "reject");
+    }
+
+    @Override
+    public void reopen(ActionContext ctx) {
+        throw new IllegalStateTransitionException(name(), "reopen");
+    }
 }

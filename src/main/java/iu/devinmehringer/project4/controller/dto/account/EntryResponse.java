@@ -12,6 +12,9 @@ public class EntryResponse {
     private Instant whenBooked;
     private Long transactionId;
     private Long accountId;
+    private String accountName;
+    private String entryType;
+    private String resourceTypeKind;
 
     public static EntryResponse from(Entry entry) {
         EntryResponse response = new EntryResponse();
@@ -21,6 +24,17 @@ public class EntryResponse {
         response.setWhenBooked(entry.getWhenBooked());
         response.setTransactionId(entry.getTransaction().getId());
         response.setAccountId(entry.getAccount().getId());
+        response.setAccountName(entry.getAccount().getName());
+        response.setEntryType(entry.getAccount().getAccountKind().name());
+
+        if (entry.getTransaction().getResourceTypeKind() != null) {
+            response.setResourceTypeKind(
+                    entry.getTransaction().getResourceTypeKind().name());
+        } else if (entry.getAccount().getResourceType() != null) {
+            response.setResourceTypeKind(
+                    entry.getAccount().getResourceType().getKind().name());
+        }
+
         return response;
     }
 
@@ -43,4 +57,15 @@ public class EntryResponse {
 
     public Long getAccountId() { return accountId; }
     public void setAccountId(Long accountId) { this.accountId = accountId; }
+
+    public String getAccountName() { return accountName; }
+    public void setAccountName(String accountName) { this.accountName = accountName; }
+
+    public String getEntryType() { return entryType; }
+    public void setEntryType(String entryType) { this.entryType = entryType; }
+
+    public String getResourceTypeKind() { return resourceTypeKind; }
+    public void setResourceTypeKind(String resourceTypeKind) {
+        this.resourceTypeKind = resourceTypeKind;
+    }
 }

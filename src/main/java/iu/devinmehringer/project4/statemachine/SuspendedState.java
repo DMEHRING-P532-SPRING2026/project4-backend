@@ -1,10 +1,8 @@
-package iu.devinmehringer.project4.model.resource;
+package iu.devinmehringer.project4.statemachine;
 
 import iu.devinmehringer.project4.controller.exception.IllegalStateTransitionException;
 import iu.devinmehringer.project4.model.plan.ActionStateEnum;
 import iu.devinmehringer.project4.model.plan.Suspension;
-import iu.devinmehringer.project4.statemachine.ActionContext;
-import iu.devinmehringer.project4.statemachine.ActionState;
 import org.springframework.stereotype.Component;
 import java.time.LocalDate;
 
@@ -23,10 +21,17 @@ public class SuspendedState implements ActionState {
 
     @Override
     public void resume(ActionContext ctx) {
-        ctx.getAction().getSuspensions().stream()
+        Suspension active = ctx.getAction().getSuspensions().stream()
                 .filter(Suspension::isActive)
-                .forEach(s -> s.setEndDate(LocalDate.now()));
-        ctx.getAction().setState(ActionStateEnum.IN_PROGRESS);
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException(
+                        "No active suspension found"));
+
+        active.setEndDate(LocalDate.now());
+
+        ActionStateEnum previousState = active.getPreviousState();
+        ctx.getAction().setState(
+                previousState != null ? previousState : ActionStateEnum.PROPOSED);
     }
 
     @Override
@@ -41,4 +46,24 @@ public class SuspendedState implements ActionState {
 
     @Override
     public String name() { return "SUSPENDED"; }
+
+    @Override
+    public void submitForApproval(ActionContext ctx) {
+        throw new IllegalStateTransitionException(name(), "submitForApproval");
+    }
+
+    @Override
+    public void approve(ActionContext ctx) {
+        throw new IllegalStateTransitionException(name(), "approve");
+    }
+
+    @Override
+    public void reject(ActionContext ctx) {
+        throw new IllegalStateTransitionException(name(), "reject");
+    }
+
+    @Override
+    public void reopen(ActionContext ctx) {
+        throw new IllegalStateTransitionException(name(), "reopen");
+    }
 }

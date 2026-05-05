@@ -15,11 +15,32 @@ public class ProposedState implements ActionState {
     }
 
     @Override
+    public void submitForApproval(ActionContext ctx) {
+        ctx.getAction().setState(ActionStateEnum.PENDING_APPROVAL);
+    }
+
+    @Override
+    public void approve(ActionContext ctx) {
+        throw new IllegalStateTransitionException("PROPOSED", "approve");
+    }
+
+    @Override
+    public void reject(ActionContext ctx) {
+        throw new IllegalStateTransitionException("PROPOSED", "reject");
+    }
+
+    @Override
+    public void reopen(ActionContext ctx) {
+        throw new IllegalStateTransitionException("PROPOSED", "reopen");
+    }
+
+    @Override
     public void suspend(ActionContext ctx, String reason) {
         Suspension suspension = new Suspension();
         suspension.setProposedAction(ctx.getAction());
         suspension.setReason(reason);
         suspension.setStartDate(LocalDate.now());
+        suspension.setPreviousState(ActionStateEnum.PROPOSED);
         ctx.getAction().getSuspensions().add(suspension);
         ctx.getAction().setState(ActionStateEnum.SUSPENDED);
     }

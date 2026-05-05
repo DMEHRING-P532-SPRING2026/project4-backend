@@ -1,24 +1,31 @@
 package iu.devinmehringer.project4.manager;
 
+import iu.devinmehringer.project4.access.EntryAccess;
 import iu.devinmehringer.project4.manager.engine.OverConsumptionPostingRule;
 import iu.devinmehringer.project4.model.ledger.Entry;
 import iu.devinmehringer.project4.model.ledger.Transaction;
 import iu.devinmehringer.project4.model.plan.ImplementedAction;
 import iu.devinmehringer.project4.model.resource.ResourceAllocation;
-import jakarta.transaction.Transactional;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 
-@Transactional
 public abstract class AbstractLedgerEntryGenerator {
 
+    private OverConsumptionPostingRule postingRuleEngine;
+    private EntryAccess entryAccess;
+
     public void setPostingRuleEngine(OverConsumptionPostingRule engine) {
+        this.postingRuleEngine = engine;
+    }
+
+    public void setEntryAccess(EntryAccess entryAccess) {
+        this.entryAccess = entryAccess;
     }
 
     public final Transaction generateEntries(ImplementedAction action) {
         List<ResourceAllocation> allocs = selectAllocations(action);
-        if (allocs.isEmpty()) {
+        if (allocs == null || allocs.isEmpty()) {
             return null;
         }
         validate(allocs);
@@ -68,14 +75,13 @@ public abstract class AbstractLedgerEntryGenerator {
     }
 
     private void postEntries(Transaction tx, Entry withdrawal, Entry deposit) {
-        boolean balanced = tx.getEntries().stream()
+        BigDecimal sum = tx.getEntries().stream()
                 .map(Entry::getAmount)
-                .reduce(BigDecimal.ZERO, BigDecimal::add)
-                .compareTo(BigDecimal.ZERO) == 0;
-
-        if (!balanced) {
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        if (sum.compareTo(BigDecimal.ZERO) != 0) {
             throw new IllegalStateException(
-                    "Transaction is not balanced after posting entries");
+                    "Transaction is not balanced after posting entries — sum="
+                            + sum);
         }
     }
 }

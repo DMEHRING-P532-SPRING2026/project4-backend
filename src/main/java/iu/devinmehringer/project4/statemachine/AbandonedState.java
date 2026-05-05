@@ -1,8 +1,6 @@
-package iu.devinmehringer.project4.model.resource;
+package iu.devinmehringer.project4.statemachine;
 
 import iu.devinmehringer.project4.controller.exception.IllegalStateTransitionException;
-import iu.devinmehringer.project4.statemachine.ActionContext;
-import iu.devinmehringer.project4.statemachine.ActionState;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -35,4 +33,24 @@ public class AbandonedState implements ActionState {
 
     @Override
     public String name() { return "ABANDONED"; }
+
+    @Override
+    public void submitForApproval(ActionContext ctx) {
+        throw new IllegalStateTransitionException(name(), "submitForApproval");
+    }
+
+    @Override
+    public void approve(ActionContext ctx) {
+        throw new IllegalStateTransitionException(name(), "approve");
+    }
+
+    @Override
+    public void reject(ActionContext ctx) {
+        throw new IllegalStateTransitionException(name(), "reject");
+    }
+
+    @Override
+    public void reopen(ActionContext ctx) {
+        throw new IllegalStateTransitionException(name(), "reopen");
+    }
 }

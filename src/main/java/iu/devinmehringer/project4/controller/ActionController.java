@@ -72,4 +72,28 @@ public class ActionController {
         return ResponseEntity.status(201)
                 .body(ActionResponse.from(actionManager.allocate(id, request)));
     }
+
+    @PostMapping("/{id}/submit-for-approval")
+    public ResponseEntity<ActionResponse> submitForApproval(@PathVariable Long id) {
+        return ResponseEntity.ok(
+                ActionResponse.from(actionManager.submitForApproval(id)));
+    }
+
+    @PostMapping("/{id}/approve")
+    public ResponseEntity<ActionResponse> approve(@PathVariable Long id) {
+        return ResponseEntity.ok(
+                ActionResponse.from(actionManager.approve(id)));
+    }
+
+    @PostMapping("/{id}/reject")
+    public ResponseEntity<ActionResponse> reject(@PathVariable Long id) {
+        return ResponseEntity.ok(
+                ActionResponse.from(actionManager.reject(id)));
+    }
+
+    @PostMapping("/{id}/reopen")
+    public ResponseEntity<ActionResponse> reopen(@PathVariable Long id) {
+        return ResponseEntity.ok(
+                ActionResponse.from(actionManager.reopen(id)));
+    }
 }

@@ -16,6 +16,7 @@ import iu.devinmehringer.project4.model.resource.Account;
 import iu.devinmehringer.project4.model.resource.AccountKind;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -76,8 +77,8 @@ public class KnowledgeManager {
             for (Integer dependsOnIndex : stepRequest.getDependsOn()) {
                 if (dependsOnIndex < 0 || dependsOnIndex >= i) {
                     throw new IllegalArgumentException(
-                            "Step " + i + " has invalid dependency index: " + dependsOnIndex
-                    );
+                            "Step " + i + " has invalid dependency index: "
+                                    + dependsOnIndex);
                 }
                 step.addDependency(steps.get(dependsOnIndex));
             }
@@ -119,6 +120,8 @@ public class KnowledgeManager {
         resourceType.setName(request.getName());
         resourceType.setKind(request.getKind());
         resourceType.setUnitOfMeasure(request.getUnitOfMeasure());
+        resourceType.setUnitCost(request.getUnitCost() != null
+                ? request.getUnitCost() : BigDecimal.ZERO);
         resourceType.setPoolAccount(poolAccount);
 
         poolAccount.setResourceType(resourceType);
@@ -143,6 +146,9 @@ public class KnowledgeManager {
         if (request.getKind() != null) existing.setKind(request.getKind());
         if (request.getUnitOfMeasure() != null) {
             existing.setUnitOfMeasure(request.getUnitOfMeasure());
+        }
+        if (request.getUnitCost() != null) {
+            existing.setUnitCost(request.getUnitCost());
         }
 
         return resourceTypeAccess.save(existing);

@@ -23,10 +23,20 @@ public class AccountController {
     }
 
     @GetMapping("/{id}/entries")
-    public ResponseEntity<List<EntryResponse>> getEntries(@PathVariable Long id) {
-        return ResponseEntity.ok(
-                actionManager.getEntriesForAccount(id).stream()
-                        .map(EntryResponse::from)
-                        .toList());
+    public ResponseEntity<List<EntryResponse>> getEntries(
+            @PathVariable Long id,
+            @RequestParam(required = false) String filter) {
+        List<EntryResponse> entries = actionManager.getEntriesForAccount(id)
+                .stream()
+                .map(EntryResponse::from)
+                .toList();
+
+        if (filter != null) {
+            entries = entries.stream()
+                    .filter(e -> filter.equalsIgnoreCase(e.getResourceTypeKind()))
+                    .toList();
+        }
+
+        return ResponseEntity.ok(entries);
     }
 }

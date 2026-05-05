@@ -2,12 +2,11 @@ package iu.devinmehringer.project4.manager;
 
 import iu.devinmehringer.project4.access.PlanAccess;
 import iu.devinmehringer.project4.access.ProtocolAccess;
+import iu.devinmehringer.project4.access.ResourceAllocationAccess;
 import iu.devinmehringer.project4.access.ResourceTypeAccess;
-import iu.devinmehringer.project4.controller.dto.plan.ActionCreateRequest;
-import iu.devinmehringer.project4.controller.dto.plan.PlanCreateRequest;
-import iu.devinmehringer.project4.controller.dto.plan.PlanReportResponse;
+import iu.devinmehringer.project4.controller.dto.plan.*;
 import iu.devinmehringer.project4.controller.exception.ProtocolNotFoundException;
-import iu.devinmehringer.project4.manager.engine.DepthFirstPlanIterator;
+import iu.devinmehringer.project4.manager.engine.*;
 import iu.devinmehringer.project4.model.knowledge.Protocol;
 import iu.devinmehringer.project4.model.knowledge.ProtocolStep;
 import iu.devinmehringer.project4.model.knowledge.ResourceType;
@@ -17,9 +16,9 @@ import iu.devinmehringer.project4.model.plan.PlanNode;
 import iu.devinmehringer.project4.model.plan.ProposedAction;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
-
 import java.math.BigDecimal;
 import java.util.*;
+import java.util.function.Predicate;
 
 @Service
 @Transactional
@@ -28,14 +27,17 @@ public class PlanManager {
     private final PlanAccess planAccess;
     private final ProtocolAccess protocolAccess;
     private final ResourceTypeAccess resourceTypeAccess;
+    private final ResourceAllocationAccess resourceAllocationAccess;
 
     public PlanManager(
             PlanAccess planAccess,
             ProtocolAccess protocolAccess,
-            ResourceTypeAccess resourceTypeAccess) {
+            ResourceTypeAccess resourceTypeAccess,
+            ResourceAllocationAccess resourceAllocationAccess) {
         this.planAccess = planAccess;
         this.protocolAccess = protocolAccess;
         this.resourceTypeAccess = resourceTypeAccess;
+        this.resourceAllocationAccess = resourceAllocationAccess;
     }
 
     public Plan createPlan(PlanCreateRequest request) {
@@ -55,22 +57,22 @@ public class PlanManager {
         return planAccess.save(plan);
     }
 
-    private void buildFromProtocol(Plan plan, Protocol protocol, PlanCreateRequest request) {
+    private void buildFromProtocol(Plan plan, Protocol protocol,
+                                   PlanCreateRequest request) {
         List<ProtocolStep> steps = protocol.getProtocolSteps()
                 .stream()
                 .filter(Objects::nonNull)
                 .toList();
 
-        List<PlanNode> nodes = new ArrayList<>();
         for (ProtocolStep step : steps) {
             Protocol subProtocol = step.getReferencedProtocol();
             PlanNode node = createNode(plan, subProtocol, request);
-            nodes.add(node);
             plan.addChild(node);
         }
     }
 
-    private PlanNode createNode(Plan parent, Protocol protocol, PlanCreateRequest request) {
+    private PlanNode createNode(Plan parent, Protocol protocol,
+                                PlanCreateRequest request) {
         List<ProtocolStep> subSteps = protocol.getProtocolSteps()
                 .stream()
                 .filter(Objects::nonNull)
@@ -104,11 +106,30 @@ public class PlanManager {
                         "Plan not found: " + id));
     }
 
+    public PlanResponse getPlanResponse(Long id, Integer depth) {
+        Plan plan = planAccess.getPlan(id)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Plan not found: " + id));
+
+        return PlanResponse.from(plan, depth);
+    }
+
     public DepthFirstPlanIterator getIterator(Plan plan) {
         return new DepthFirstPlanIterator(plan);
     }
 
-    public List<PlanReportResponse> generateReport(Long id) {
+    public Iterator<PlanNode> getFilteredIterator(Plan plan,
+                                                  Predicate<PlanNode> predicate) {
+        return new FilteredPlanIterator(
+                new DepthFirstPlanIterator(plan), predicate);
+    }
+
+    public Iterator<PlanNode> getLazyIterator(PlanNode root, int depthLimit) {
+        return new LazySubtreeIterator(root, depthLimit);
+    }
+
+    public List<PlanReportResponse> generateReport(Long id,
+                                                   String statusFilter) {
         Plan plan = planAccess.getPlan(id)
                 .orElseThrow(() -> new IllegalArgumentException(
                         "Plan not found: " + id));
@@ -116,7 +137,16 @@ public class PlanManager {
         List<ResourceType> resourceTypes = resourceTypeAccess.getResourceTypes();
         List<PlanReportResponse> report = new ArrayList<>();
 
-        DepthFirstPlanIterator iterator = new DepthFirstPlanIterator(plan);
+        Iterator<PlanNode> iterator;
+        if (statusFilter != null && !statusFilter.isBlank()) {
+            ActionStateEnum filterState = ActionStateEnum.valueOf(
+                    statusFilter.toUpperCase());
+            iterator = getFilteredIterator(plan,
+                    node -> node.getStatus() == filterState);
+        } else {
+            iterator = getIterator(plan);
+        }
+
         while (iterator.hasNext()) {
             PlanNode node = iterator.next();
 
@@ -134,7 +164,6 @@ public class PlanManager {
                 }
             }
             entry.setAllocatedQuantityByResourceType(quantities);
-
             report.add(entry);
         }
 
@@ -170,5 +199,48 @@ public class PlanManager {
         plan.addChild(action);
 
         return planAccess.save(plan);
+    }
+
+    private PlanNode findNode(Plan plan, Long nodeId) {
+        if (plan.getId().equals(nodeId)) return plan;
+        Iterator<PlanNode> iterator = getIterator(plan);
+        while (iterator.hasNext()) {
+            PlanNode node = iterator.next();
+            if (node.getId().equals(nodeId)) return node;
+        }
+        return null;
+    }
+
+    public PlanMetricsResponse getMetrics(Long planId, Long nodeId) {
+        Plan plan = planAccess.getPlan(planId)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Plan not found: " + planId));
+
+        PlanNode target = findNode(plan, nodeId);
+        if (target == null) throw new IllegalArgumentException(
+                "Node not found: " + nodeId + " in plan: " + planId);
+
+        CompletionRatioVisitor completionVisitor = new CompletionRatioVisitor();
+
+        ResourceCostVisitor costVisitor = new ResourceCostVisitor(
+                resourceAllocationAccess::findByProposedActionId);
+
+        RiskScoreVisitor riskVisitor = new RiskScoreVisitor();
+
+        target.accept(completionVisitor);
+        target.accept(costVisitor);
+        target.accept(riskVisitor);
+
+        PlanMetricsResponse response = new PlanMetricsResponse();
+        response.setNodeId(target.getId());
+        response.setNodeName(target.getName());
+        response.setNodeType(target instanceof Plan ? "PLAN" : "ACTION");
+        response.setTotalLeaves(completionVisitor.getTotalLeaves());
+        response.setCompletedLeaves(completionVisitor.getCompletedLeaves());
+        response.setCompletionRatio(completionVisitor.getRatio());
+        response.setTotalCost(costVisitor.getTotalCost());
+        response.setRiskScore(riskVisitor.getScore());
+
+        return response;
     }
 }

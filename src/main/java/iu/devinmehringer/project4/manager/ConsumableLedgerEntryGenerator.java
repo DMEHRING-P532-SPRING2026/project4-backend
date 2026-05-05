@@ -1,5 +1,6 @@
 package iu.devinmehringer.project4.manager;
 
+import iu.devinmehringer.project4.access.EntryAccess;
 import iu.devinmehringer.project4.manager.engine.OverConsumptionPostingRule;
 import iu.devinmehringer.project4.model.knowledge.ResourceTypeKind;
 import iu.devinmehringer.project4.model.ledger.Transaction;
@@ -11,8 +12,11 @@ import java.util.List;
 @Component
 public class ConsumableLedgerEntryGenerator extends AbstractLedgerEntryGenerator {
 
-    public ConsumableLedgerEntryGenerator(OverConsumptionPostingRule postingRuleEngine) {
+    public ConsumableLedgerEntryGenerator(
+            OverConsumptionPostingRule postingRuleEngine,
+            EntryAccess entryAccess) {
         setPostingRuleEngine(postingRuleEngine);
+        setEntryAccess(entryAccess);
     }
 
     @Override

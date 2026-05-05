@@ -1,8 +1,7 @@
-package iu.devinmehringer.project4.model.resource;
+package iu.devinmehringer.project4.statemachine;
 
 import iu.devinmehringer.project4.controller.exception.IllegalStateTransitionException;
-import iu.devinmehringer.project4.statemachine.ActionContext;
-import iu.devinmehringer.project4.statemachine.ActionState;
+import iu.devinmehringer.project4.model.plan.ActionStateEnum;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -11,6 +10,26 @@ public class CompletedState implements ActionState {
     @Override
     public void implement(ActionContext ctx) {
         throw new IllegalStateTransitionException("COMPLETED", "implement");
+    }
+
+    @Override
+    public void submitForApproval(ActionContext ctx) {
+        throw new IllegalStateTransitionException("COMPLETED", "submitForApproval");
+    }
+
+    @Override
+    public void approve(ActionContext ctx) {
+        throw new IllegalStateTransitionException("COMPLETED", "approve");
+    }
+
+    @Override
+    public void reject(ActionContext ctx) {
+        throw new IllegalStateTransitionException("COMPLETED", "reject");
+    }
+
+    @Override
+    public void reopen(ActionContext ctx) {
+        ctx.getAction().setState(ActionStateEnum.REOPENED);
     }
 
     @Override

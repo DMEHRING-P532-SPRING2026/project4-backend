@@ -4,7 +4,6 @@ import iu.devinmehringer.project4.model.plan.ActionStateEnum;
 import iu.devinmehringer.project4.model.plan.Plan;
 import iu.devinmehringer.project4.model.plan.PlanNode;
 import iu.devinmehringer.project4.model.plan.ProposedAction;
-
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -21,7 +20,7 @@ public class PlanResponse {
     public static class PlanNodeResponse {
         private Long id;
         private String name;
-        private String type;        // PLAN or ACTION
+        private String type;
         private ActionStateEnum status;
         private List<PlanNodeResponse> children = new ArrayList<>();
 
@@ -43,7 +42,13 @@ public class PlanResponse {
         }
     }
 
+    // full tree — no depth limit
     public static PlanResponse from(Plan plan) {
+        return from(plan, null);
+    }
+
+    // depth-limited tree — stops recursing at maxDepth
+    public static PlanResponse from(Plan plan, Integer maxDepth) {
         PlanResponse response = new PlanResponse();
         response.setId(plan.getId());
         response.setName(plan.getName());
@@ -55,13 +60,14 @@ public class PlanResponse {
         }
 
         for (PlanNode child : plan.getChildren()) {
-            response.getChildren().add(buildNodeResponse(child));
+            response.getChildren().add(buildNodeResponse(child, 1, maxDepth));
         }
 
         return response;
     }
 
-    private static PlanNodeResponse buildNodeResponse(PlanNode node) {
+    private static PlanNodeResponse buildNodeResponse(PlanNode node,
+                                                      int currentDepth, Integer maxDepth) {
         PlanNodeResponse response = new PlanNodeResponse();
         response.setId(node.getId());
         response.setName(node.getName());
@@ -69,8 +75,11 @@ public class PlanResponse {
 
         if (node instanceof Plan plan) {
             response.setType("PLAN");
-            for (PlanNode child : plan.getChildren()) {
-                response.getChildren().add(buildNodeResponse(child));
+            if (maxDepth == null || currentDepth < maxDepth) {
+                for (PlanNode child : plan.getChildren()) {
+                    response.getChildren().add(
+                            buildNodeResponse(child, currentDepth + 1, maxDepth));
+                }
             }
         } else if (node instanceof ProposedAction) {
             response.setType("ACTION");

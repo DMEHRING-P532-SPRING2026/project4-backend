@@ -1,5 +1,6 @@
 package iu.devinmehringer.project4.model.ledger;
 
+import iu.devinmehringer.project4.model.knowledge.ResourceTypeKind;
 import iu.devinmehringer.project4.model.plan.ImplementedAction;
 import iu.devinmehringer.project4.model.resource.Account;
 import jakarta.persistence.*;
@@ -29,6 +30,9 @@ public class Transaction {
     @ManyToOne
     @JoinColumn(name = "implemented_action_id")
     private ImplementedAction originatingAction;
+
+    @Enumerated(EnumType.STRING)
+    private ResourceTypeKind resourceTypeKind;
 
     @OneToMany(mappedBy = "transaction", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Entry> entries = new ArrayList<>();
@@ -63,6 +67,11 @@ public class Transaction {
     public ImplementedAction getOriginatingAction() { return originatingAction; }
     public void setOriginatingAction(ImplementedAction originatingAction) {
         this.originatingAction = originatingAction;
+    }
+
+    public ResourceTypeKind getResourceTypeKind() { return resourceTypeKind; }
+    public void setResourceTypeKind(ResourceTypeKind resourceTypeKind) {
+        this.resourceTypeKind = resourceTypeKind;
     }
 
     public List<Entry> getEntries() { return entries; }

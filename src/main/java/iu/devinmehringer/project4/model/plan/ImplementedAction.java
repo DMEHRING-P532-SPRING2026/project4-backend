@@ -19,7 +19,7 @@ public class ImplementedAction {
 
     @OneToOne
     @JoinColumn(name = "proposed_action_id")
-    private ProposedAction proposedAction;  // optional per chapter 8
+    private ProposedAction proposedAction;
 
     @Column(nullable = false)
     private Instant actualStart;

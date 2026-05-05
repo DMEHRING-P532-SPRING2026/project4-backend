@@ -1,7 +1,6 @@
 package iu.devinmehringer.project4.model.plan;
 
 import jakarta.persistence.*;
-
 import java.time.LocalDate;
 
 @Entity
@@ -18,7 +17,7 @@ public class Suspension {
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "proposed_action_id")
+    @JoinColumn(name = "proposed_action_id", nullable = false)
     private ProposedAction proposedAction;
 
     @Column(nullable = false)
@@ -29,6 +28,9 @@ public class Suspension {
 
     private LocalDate endDate;
 
+    @Enumerated(EnumType.STRING)
+    private ActionStateEnum previousState;
+
     public Suspension() {}
 
     public boolean isActive() {
@@ -38,7 +40,6 @@ public class Suspension {
     public Long getId() { return id; }
 
     public ProposedAction getProposedAction() { return proposedAction; }
-
     public void setProposedAction(ProposedAction proposedAction) {
         this.proposedAction = proposedAction;
     }
@@ -54,4 +55,10 @@ public class Suspension {
     public LocalDate getEndDate() { return endDate; }
 
     public void setEndDate(LocalDate endDate) { this.endDate = endDate; }
+
+    public ActionStateEnum getPreviousState() { return previousState; }
+
+    public void setPreviousState(ActionStateEnum previousState) {
+        this.previousState = previousState;
+    }
 }

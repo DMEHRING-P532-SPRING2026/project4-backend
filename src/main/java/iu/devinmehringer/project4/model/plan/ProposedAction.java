@@ -49,8 +49,9 @@ public class ProposedAction implements PlanNode {
     @OneToMany(mappedBy = "proposedAction", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Suspension> suspensions = new ArrayList<>();
 
-    @OneToOne(mappedBy = "proposedAction")
-    private ImplementedAction implementedAction;
+    @OneToOne(mappedBy = "proposedAction", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    private ImplementedAction implementedAction;;
+
 
     public ProposedAction() {}
 
@@ -59,6 +60,7 @@ public class ProposedAction implements PlanNode {
 
     @Override
     public String getName() { return name; }
+
     public void setName(String name) { this.name = name; }
 
     public Protocol getProtocol() { return protocol; }
@@ -108,6 +110,11 @@ public class ProposedAction implements PlanNode {
 
     @Override
     public void accept(PlanNodeVisitor visitor) {
-        visitor.visit(this);
+        visitor.visitLeaf(this);
     }
+
+    public void setImplementedAction(ImplementedAction implementedAction) {
+        this.implementedAction = implementedAction;
+    }
+
 }

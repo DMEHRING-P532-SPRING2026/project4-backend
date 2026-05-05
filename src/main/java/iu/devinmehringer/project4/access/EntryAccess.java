@@ -17,10 +17,14 @@ public class EntryAccess {
     }
 
     public List<Entry> getEntriesForAccount(Account account) {
-        return entryRepository.findByAccount(account);
+        return entryRepository.findByAccountId(account.getId());
     }
 
     public BigDecimal getBalanceForAccount(Account account) {
-        return entryRepository.sumAmountByAccount(account);
+        return entryRepository.sumAmountByAccountId(account.getId());
+    }
+
+    public Entry save(Entry entry) {
+        return entryRepository.save(entry);
     }
 }
